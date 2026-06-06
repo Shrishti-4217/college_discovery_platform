@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String      @id @default(cuid())
+  email     String      @unique
+  password  String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  saved     SavedItem[]
+}
+
+model College {
+  id          String      @id @default(cuid())
+  name        String
+  location    String
+  state       String
+  type        String      // "engineering" | "medical" | "arts" | "management" | "science"
+  fees        Int         // annual fees in INR
+  rating      Float
+  established Int?
+  website     String?
+  description String?
+  courses     Course[]
+  cutoffs     Cutoff[]
+  savedBy     SavedItem[]
+  createdAt   DateTime    @default(now())
+
+  @@index([state])
+  @@index([type])
+  @@index([rating])
+  @@index([fees])
+}
+
+model Course {
+  id        String  @id @default(cuid())
+  name      String
+  duration  Int     // years
+  fees      Int     // annual fees for this specific course
+  seats     Int?
+  college   College @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+  collegeId String
+
+  @@index([collegeId])
+}
+
+model Cutoff {
+  id        String  @id @default(cuid())
+  exam      String  // "JEE_MAIN" | "JEE_ADVANCED" | "NEET" | "CAT" | "GATE"
+  category  String  // "general" | "obc" | "sc" | "st" | "ews"
+  rankFrom  Int
+  rankTo    Int
+  year      Int
+  college   College @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+  collegeId String
+
+  @@index([exam, category, rankFrom, rankTo])
+  @@index([collegeId])
+}
+
+model SavedItem {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  college   College  @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+  collegeId String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, collegeId])
+  @@index([userId])
+}
